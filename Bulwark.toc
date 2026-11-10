@@ -1,0 +1,15 @@
+## Interface: 16001
+## Title: Bulwark- Metrotank |cff4fb3ff(Tank Alerts)|r
+## Notes: Tank helper for WoW Forever: threat-lost alerts, CC-broken pings and nameplate colors.
+## Author: Metrobus Designs
+## Version: 0.1.0 - BETA
+## SavedVariables: BulwarkDB
+## IconTexture: Interface\Icons\Ability_Warrior_DefensiveStance
+
+# Load order matters: Core first (it creates the shared tables), Options last.
+Core.lua
+Alerts.lua
+Nameplates.lua
+Threat.lua
+CrowdControl.lua
+Options.lua
