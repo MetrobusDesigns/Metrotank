@@ -1,5 +1,5 @@
 --[[
-  Bulwark - CrowdControl.lua
+  Metrotank - CrowdControl.lua
   --------------------------
   Watches enemy nameplates for crowd control (Polymorph, Sap, Shackle,
   Freezing Trap, Hibernate...) and pings when it ends early.

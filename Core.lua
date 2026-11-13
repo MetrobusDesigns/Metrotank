@@ -1,5 +1,5 @@
 --[[
-  Bulwark - Core.lua
+  Metrotank - Core.lua
   -------------------
   Sets up the shared "ns" table every file uses, the saved settings,
   the event system, slash commands and a few safe helper functions.
@@ -12,12 +12,12 @@
 ]]
 
 local ADDON_NAME, ns = ...
-_G.Bulwark = ns -- handy for /dump Bulwark in game
+_G.Metrotank = ns -- handy for /dump Metrotank in game
 
 ns.version = "0.1.0"
 
 ---------------------------------------------------------------------------
--- Default settings. Anything the player changes is saved in BulwarkDB.
+-- Default settings. Anything the player changes is saved in MetrotankDB.
 ---------------------------------------------------------------------------
 ns.defaults = {
   general = {
@@ -87,12 +87,12 @@ function ns.Try(func, ...)
 end
 
 function ns.Print(...)
-  print("|cff4fb3ffBulwark|r:", ...)
+  print("|cff4fb3ffMetrotank|r:", ...)
 end
 
 function ns.Debug(...)
   if ns.db and ns.db.general.debug then
-    print("|cff8b93a5Bulwark debug|r:", ...)
+    print("|cff8b93a5Metrotank debug|r:", ...)
   end
 end
 
@@ -195,27 +195,27 @@ function ns:Fire(message, ...)
 end
 
 ---------------------------------------------------------------------------
--- Startup
+-- Startup  Sequence
 ---------------------------------------------------------------------------
 ns:On("ADDON_LOADED", function(_, name)
   if name ~= ADDON_NAME then return end
-  BulwarkDB = BulwarkDB or {}
-  MergeDefaults(BulwarkDB, ns.defaults)
-  ns.db = BulwarkDB
+  MetrotankDB = MetrotankDB or {}
+  MergeDefaults(MetrotankDB, ns.defaults)
+  ns.db = MetrotankDB
   ns:Fire("DB_READY")
 end)
 
 ns:On("PLAYER_LOGIN", function()
   ns:Fire("LOGIN")
-  ns.Print("loaded v" .. ns.version .. ". Type |cffffffff/bulwark|r for options.")
+  ns.Print("loaded v" .. ns.version .. ". Type |cffffffff/metrotank|r for options.")
 end)
 
 ---------------------------------------------------------------------------
--- Slash commands  (/bulwark or /bwk — /bw is taken by BigWigs)
+-- Slash commands  (/metrotank or /mtk)
 ---------------------------------------------------------------------------
-SLASH_BULWARK1 = "/bulwark"
-SLASH_BULWARK2 = "/bwk"
-SlashCmdList.BULWARK = function(msg)
+SLASH_METROTANK1 = "/metrotank"
+SLASH_METROTANK2 = "/mtk"
+SlashCmdList.METROTANK = function(msg)
   msg = (msg or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
 
   if msg == "" or msg == "options" or msg == "config" then
@@ -230,11 +230,11 @@ SlashCmdList.BULWARK = function(msg)
     ns.db.general.debug = not ns.db.general.debug
     ns.Print("debug is now " .. (ns.db.general.debug and "ON" or "OFF"))
   elseif msg == "reset" then
-    BulwarkDB = DeepCopy(ns.defaults)
-    ns.db = BulwarkDB
+    MetrotankDB = DeepCopy(ns.defaults)
+    ns.db = MetrotankDB
     ns:Fire("SETTING_CHANGED", {}, nil)
     ns.Print("all settings reset.")
   else
-    ns.Print("commands: /bulwark  |  test  |  test cc  |  unlock  |  debug  |  reset")
+    ns.Print("commands: /metrotank  |  test  |  test cc  |  unlock  |  debug  |  reset")
   end
 end

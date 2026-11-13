@@ -1,5 +1,5 @@
 --[[
-  Bulwark  Metrotank- Nameplates.lua
+  Metrotank - Nameplates.lua
   ------------------------
   Puts a colored border, a small icon and a short label ("LOST", "CC'D"...)
   on each enemy nameplate. Works on top of Blizzard plates, Plater, Platynator
@@ -232,7 +232,7 @@ ns:Listen("SETTING_CHANGED", function()
   for _, o in pairs(ns.overlays) do ns.RenderOverlay(o) end
 end)
 
--- /bulwark test: show a state on your current target's plate for 4 seconds
+-- /metrotank test: show a state on your current target's plate for 4 seconds
 ns:Listen("TEST_PLATES", function(state)
   local plate = C_NamePlate.GetNamePlateForUnit("target")
   local o = plate and overlayByPlate[plate]

@@ -1,5 +1,5 @@
 --[[
-  Bulwark - Threat.lua
+  Metrotank - Threat.lua
   --------------------
   Checks your threat on every enemy nameplate a few times per second while
   you're in combat.

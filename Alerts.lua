@@ -1,5 +1,5 @@
 --[[
-  Bulwark (Metrotank)- Alerts.lua
+  Metrotank - Alerts.lua
   --------------------
   Sounds (with a cooldown so they don't spam) and the two center-screen
   banners: "THREAT LOST" and "CC BROKEN".
@@ -10,8 +10,8 @@ local _, ns = ...
 ---------------------------------------------------------------------------
 -- Sound list. "kit" names come from Blizzard's SOUNDKIT table; the number is
 -- a fallback in case the name is missing on this client.
--- To add your own .ogg file: put it in Bulwark\Media\ and add an entry with
---   file = "Interface\\AddOns\\Bulwark\\Media\\myfile.ogg"
+-- To add your own .ogg file: put it in Metrotank\Media\ and add an entry with
+--   file = "Interface\\AddOns\\Metrotank\\Media\\myfile.ogg"
 ---------------------------------------------------------------------------
 ns.Sounds = {
   { key = "NONE",         label = "None" },
@@ -100,7 +100,7 @@ local banners = {}
 local locked = true
 
 local function CreateBanner(key, yOffset, borderColor, big)
-  local f = CreateFrame("Frame", "BulwarkBanner_" .. key, UIParent, "BackdropTemplate")
+  local f = CreateFrame("Frame", "MetrotankBanner_" .. key, UIParent, "BackdropTemplate")
   f:SetSize(big and 420 or 380, big and 64 or 40)
   f:SetFrameStrata("HIGH")
   f:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 2 })
@@ -141,7 +141,7 @@ local function CreateBanner(key, yOffset, borderColor, big)
   fade:SetFromAlpha(1); fade:SetToAlpha(0); fade:SetDuration(0.6); fade:SetOrder(2)
   f.anim:SetScript("OnFinished", function() if locked then f:Hide() end end)
 
-  -- dragging (only when unlocked with /bulwark unlock)
+  -- dragging (only when unlocked with /metrotank unlock)
   f:SetMovable(true)
   f:RegisterForDrag("LeftButton")
   f:SetScript("OnDragStart", function(self) if not locked then self:StartMoving() end end)
@@ -219,7 +219,7 @@ ns:Listen("TOGGLE_BANNER_LOCK", function()
   end
   if not locked then
     banners.threat.title:SetText("THREAT LOST")
-    banners.threat.sub:SetText("Drag me, then type /bulwark lock")
+    banners.threat.sub:SetText("Drag me, then type /metrotank lock")
     banners.cc.title:SetText("CC BROKEN - drag me")
   end
   ns.Print(locked and "banners locked." or "banners unlocked - drag them where you like.")

@@ -1,5 +1,5 @@
 --[[
-  Bulwark - Options.lua
+  Metrotank - Options.lua
   ---------------------
   The options window with a search bar.
 
@@ -8,11 +8,22 @@
   automatically appears in the window AND becomes searchable.
 ]]
 
+-- GUIDE: how this file is organized, top to bottom
+--   1. Look & feel      colors + small helpers (Skin, Text) used everywhere
+--   2. Sections/options the DATA: the left-menu sections and the OPTIONS list
+--   3. Widgets          one Make___ function per option type (toggle, slider...)
+--   4. CreateRow        builds one row from one OPTIONS entry
+--   5. Main window      search, left menu, scrolling list, footer
+--   6. Hooks            /metrotank toggle + the Esc > Options > AddOns page
+-- Most of the time you only need to touch part 2 (the OPTIONS list).
+
 local _, ns = ...
 
 ---------------------------------------------------------------------------
 -- Look & feel
 ---------------------------------------------------------------------------
+-- Color palette. Each is { red, green, blue, alpha } with values from 0 to 1.
+-- Change these to re-theme the whole window.
 local C = {
   bg     = { 0.055, 0.063, 0.082, 0.97 },
   panel  = { 0.086, 0.098, 0.125, 1 },
@@ -22,9 +33,14 @@ local C = {
   accent2= { 0.17, 0.44, 0.66, 1 },
   muted  = { 0.55, 0.58, 0.65, 1 },
 }
+-- Same accent blue as C.accent, but in WoW's inline text-color format
+-- (|cffRRGGBB ... |r). Used to color part of a string, e.g. search highlights.
 local ACCENT_HEX = "|cff4fb3ff"
+-- A plain white 8x8 texture. Tinted via backdrop colors to make flat rectangles.
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 
+-- Skin(): gives any frame a flat background + 1px border using the palette.
+-- Pass bg/border colors to override the defaults (panel / line).
 local function Skin(frame, bg, border)
   if not frame.SetBackdrop then Mixin(frame, BackdropTemplateMixin) end
   frame:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
@@ -32,6 +48,8 @@ local function Skin(frame, bg, border)
   frame:SetBackdropBorderColor(unpack(border or C.line))
 end
 
+-- Text(): shortcut for creating a text label on a parent frame.
+-- template = a Blizzard font style, size = optional override, r/g/b = optional color.
 local function Text(parent, template, size, r, g, b)
   local fs = parent:CreateFontString(nil, "OVERLAY", template or "GameFontHighlight")
   if size then
@@ -46,6 +64,9 @@ end
 ---------------------------------------------------------------------------
 -- Sections (left menu) and options
 ---------------------------------------------------------------------------
+-- The buttons in the left menu, in display order. "key" is what each option's
+-- "s" field points at; "color" is the little dot beside the name.
+-- To add a new menu page, add a line here, then give options s = "yourkey".
 local SECTIONS = {
   { key = "general",  label = "General",        color = { 0.55, 0.58, 0.65 } },
   { key = "threat",   label = "Threat",         color = { 1.00, 0.30, 0.30 } },
@@ -55,9 +76,12 @@ local SECTIONS = {
   { key = "taunt",    label = "Taunt Cooldown", color = { 0.31, 0.70, 1.00 } },
   { key = "profiles", label = "Profiles",       color = { 0.35, 0.35, 0.35 } },
 }
+-- Lookup table built from SECTIONS: key -> label (e.g. "cc" -> "Crowd Control").
+-- Used by search so results can show which section they came from.
 local SECTION_LABEL = {}
 for _, s in ipairs(SECTIONS) do SECTION_LABEL[s.key] = s.label end
 
+-- Choices for "choice" (dropdown) options. key = value saved, label = text shown.
 local TANK_MODES = {
   { key = "auto",   label = "Auto (group role / class)" },
   { key = "always", label = "Always on" },
@@ -69,17 +93,29 @@ local CHANNELS = {
   { key = "Music",  label = "Music" },
 }
 
+-- THE OPTIONS LIST. One entry = one row in the window. Fields:
+--   s     which SECTIONS page it appears on
+--   type  which kind of widget to draw (see the list below)
+--   label / desc   the title and the grey helper text
+--   path  where the value is saved in the settings DB, e.g. { "cc", "pingCount" }
+--         means ns.db.cc.pingCount (this is the same value Alerts.lua reads)
+--   keys  extra hidden words so the search bar can find this row
+-- Extra fields by type:
+--   choice  choices = a list like TANK_MODES
+--   slider  min, max, step, and fmt (how the number is printed, e.g. "%d s")
+--   colors  colors = { { "dbKey", "Label" }, ... }
+--   button  button = text on the button, run = function to call when clicked
 -- type: header | toggle | choice | sound | slider | colors | text | button
 local OPTIONS = {
   -- General
   { s = "general", type = "header", label = "Basics" },
-  { s = "general", type = "toggle", label = "Enable Bulwark", desc = "Turn every alert on or off", path = { "general", "enabled" }, keys = "on off disable" },
+  { s = "general", type = "toggle", label = "Enable Metrotank", desc = "Turn every alert on or off", path = { "general", "enabled" }, keys = "on off disable" },
   { s = "general", type = "choice", label = "Tank mode", desc = "When should tank alerts run?", path = { "general", "tankMode" }, choices = TANK_MODES, keys = "role spec auto" },
   { s = "general", type = "toggle", label = "Debug messages", desc = "Print what the addon sees to chat (for testing)", path = { "general", "debug" }, keys = "test print chat" },
 
   -- Threat
   { s = "threat", type = "header", label = "Threat alerts" },
-  { s = "threat", type = "toggle", label = "Alert when I lose threat", desc = "Banner + sound when a mob turns away from you", path = { "threat", "alertLost" }, keys = "aggro warning banner" },
+  { s = "threat", type = "toggle", label = "Alert me when I lose threat", desc = "Banner + sound when a mob turns away from you", path = { "threat", "alertLost" }, keys = "aggro warning banner" },
   { s = "threat", type = "toggle", label = "Warn when threat is slipping", desc = "Someone is close to pulling the mob off you", path = { "threat", "alertSlipping" }, keys = "aggro close" },
   { s = "threat", type = "toggle", label = "Show threat banner", desc = "Big center-screen message", path = { "threat", "showBanner" }, keys = "text screen" },
   { s = "threat", type = "toggle", label = "Only in a group", desc = "Stay quiet while soloing", path = { "threat", "onlyInGroup" }, keys = "solo party" },
@@ -93,6 +129,7 @@ local OPTIONS = {
   { s = "cc", type = "toggle", label = "Watch crowd control", desc = "Sheep, sap, shackle, trap, hibernate...", path = { "cc", "enabled" }, keys = "cc polymorph sap" },
   { s = "cc", type = "toggle", label = "Alert even when unsure", desc = "In dungeons we can't tell 'broke' from 'ran out'", path = { "cc", "alertWhenUnknown" }, keys = "cc ended expired" },
   { s = "cc", type = "toggle", label = "Show CC banner", desc = "Center-screen 'CC BROKEN' message", path = { "cc", "showBanner" }, keys = "cc text" },
+  -- (this "sound" row is the dropdown that picks ns.db.cc.breakSound; its list comes from ns.Sounds in Alerts.lua)
   { s = "cc", type = "sound",  label = "CC-broken ping sound", desc = "Played when CC ends early", path = { "cc", "breakSound" }, keys = "cc audio ping" },
   { s = "cc", type = "slider", label = "Number of pings", desc = "How many times the ping plays", path = { "cc", "pingCount" }, min = 1, max = 3, step = 1, fmt = "%d", keys = "cc repeat" },
   { s = "cc", type = "slider", label = "Highlight time", desc = "Seconds the plate stays orange", path = { "cc", "flashSeconds" }, min = 1, max = 10, step = 1, fmt = "%d s", keys = "cc flash duration" },
@@ -119,14 +156,21 @@ local OPTIONS = {
   -- Profiles
   { s = "profiles", type = "header", label = "Profiles" },
   { s = "profiles", type = "button", label = "Move alert banners", desc = "Unlock / lock the banners so you can drag them", button = "Unlock", run = function() ns:Fire("TOGGLE_BANNER_LOCK") end, keys = "position move drag" },
-  { s = "profiles", type = "button", label = "Reset everything", desc = "Put every setting back to default", button = "Reset", run = function() SlashCmdList.BULWARK("reset") end, keys = "default" },
+  { s = "profiles", type = "button", label = "Reset everything", desc = "Put every setting back to default", button = "Reset", run = function() SlashCmdList.METROTANK("reset") end, keys = "default" },
 }
 
 ---------------------------------------------------------------------------
 -- Widgets
 ---------------------------------------------------------------------------
-local ROW_W, ROW_H, HEADER_H = 470, 52, 26
+-- Each Make___ function below fills a row with the control for one option type.
+-- They all follow the same pattern:
+--   1. create the control and anchor it on the right side of the row
+--   2. on user input, save the value with ns.Set(opt.path, value)
+--   3. define row.Refresh(), which re-reads ns.Get(opt.path) and redraws the
+--      control (RefreshList calls it whenever the window needs updating)
+local ROW_W, ROW_H, HEADER_H = 470, 52, 26 -- row width, row height, header height
 
+-- On/off switch: a colored track with a sliding knob.
 local function MakeToggle(row, opt)
   local b = CreateFrame("Button", nil, row)
   b:SetSize(38, 20)
@@ -147,6 +191,8 @@ local function MakeToggle(row, opt)
   end
 end
 
+-- Turns a saved key ("always") into its display label ("Always on").
+-- Falls back to the raw key if it isn't in the list.
 local function LabelFor(list, key)
   for _, c in ipairs(list) do if c.key == key then return c.label end end
   return key
@@ -181,6 +227,8 @@ local function MakeDropdown(row, opt, list, rightOffset)
   return b
 end
 
+-- Sound picker: a dropdown (built from ns.Sounds in Alerts.lua, so adding a
+-- sound there adds it here automatically) plus a ">" button that previews it.
 local function MakeSound(row, opt)
   local list = {}
   for _, s in ipairs(ns.Sounds) do table.insert(list, { key = s.key, label = s.label }) end
@@ -189,10 +237,14 @@ local function MakeSound(row, opt)
   play:SetPoint("RIGHT", -12, 0)
   Skin(play, { 0.14, 0.20, 0.28, 1 }, C.accent2)
   local t = Text(play, "GameFontHighlight"); t:SetPoint("CENTER", 1, 0); t:SetText(ACCENT_HEX .. ">|r")
+  -- force = true so the preview ignores the cooldown (see PlayAlertSound)
   play:SetScript("OnClick", function() ns.PlayAlertSound(ns.Get(opt.path), true) end)
-  MakeDropdown(row, opt, list, 44)
+  MakeDropdown(row, opt, list, 44) -- 44 = leave room on the right for the play button
 end
 
+-- Slider: min/max/step come from the option entry; the number beside it is
+-- formatted with opt.fmt. Only saves when the USER drags it (userInput), not
+-- when Refresh sets the value in code.
 local function MakeSlider(row, opt)
   local s = CreateFrame("Slider", nil, row)
   s:SetSize(140, 16)
@@ -220,6 +272,8 @@ local function MakeSlider(row, opt)
   end
 end
 
+-- Opens Blizzard's color picker for one color in ns.db.colors. Changes apply
+-- live while you pick; Cancel restores the old color.
 local function OpenColorPicker(colorKey)
   local c = ns.db.colors[colorKey]
   local old = { r = c.r, g = c.g, b = c.b }
@@ -236,6 +290,7 @@ local function OpenColorPicker(colorKey)
   end
 end
 
+-- Row of clickable color swatches with labels, laid out right-to-left.
 local function MakeColors(row, opt)
   local swatches = {}
   local x = -12
@@ -260,6 +315,7 @@ local function MakeColors(row, opt)
   end
 end
 
+-- Text box: saves on Enter, Escape discards your typing.
 local function MakeTextInput(row, opt)
   local e = CreateFrame("EditBox", nil, row, "BackdropTemplate")
   e:SetSize(150, 26)
@@ -273,6 +329,8 @@ local function MakeTextInput(row, opt)
   row.Refresh = function() e:SetText(ns.Get(opt.path) or "") end
 end
 
+-- General-purpose button, used for "button" rows and the window's own buttons.
+-- primary = true gives it the bright accent look.
 local function MakeButton(parent, label, width, onClick, primary)
   local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
   b:SetSize(width or 110, 26)
@@ -287,10 +345,12 @@ end
 ---------------------------------------------------------------------------
 -- Build one row
 ---------------------------------------------------------------------------
+-- Builds one row from one OPTIONS entry. Headers are just a small caption;
+-- everything else gets a label + description and then the matching widget.
 local function CreateRow(parent, opt)
   local row = CreateFrame("Frame", nil, parent, "BackdropTemplate")
   row.opt = opt
-  row.Refresh = function() end
+  row.Refresh = function() end -- placeholder; each widget replaces this
 
   if opt.type == "header" then
     row:SetSize(ROW_W, HEADER_H)
@@ -306,6 +366,7 @@ local function CreateRow(parent, opt)
   row.label = Text(row, "GameFontHighlight", 13)
   row.desc  = Text(row, "GameFontHighlightSmall", 11, unpack(C.muted))
 
+  -- pick the widget builder that matches this option's type
   if opt.type == "toggle" then MakeToggle(row, opt)
   elseif opt.type == "choice" then MakeDropdown(row, opt, opt.choices)
   elseif opt.type == "sound" then MakeSound(row, opt)
@@ -319,7 +380,10 @@ local function CreateRow(parent, opt)
   return row
 end
 
--- Position the text inside a row depending on search mode
+-- Position the text inside a row depending on search mode.
+-- Normal browsing: label with the description under it.
+-- Searching: section name ("crumb") above the label, matched letters
+-- highlighted in blue, and the description hidden.
 local function LayoutRowText(row, query)
   local opt = row.opt
   local label = opt.label
@@ -350,15 +414,26 @@ end
 ---------------------------------------------------------------------------
 -- Main window
 ---------------------------------------------------------------------------
+-- Window state shared by the functions below:
+--   win         the main window (nil until first opened)
+--   rows        every row built from OPTIONS
+--   navButtons  the left-menu buttons, keyed by section key
+--   currentSection  which page is showing; query = current search text
 local win, rows, navButtons = nil, {}, {}
-local currentSection, query = "threat", ""
+local currentSection, query = "threat", "" -- window opens on the Threat page
 
+-- Search test: does the lowercase query appear in the option's label,
+-- description, hidden "keys" words or section name? (plain find, no patterns)
 local function Matches(opt, q)
   if opt.type == "header" then return false end
   local hay = (opt.label .. " " .. (opt.desc or "") .. " " .. (opt.keys or "") .. " " .. SECTION_LABEL[opt.s]):lower()
   return hay:find(q, 1, true) ~= nil
 end
 
+-- RefreshList(): redraws the content area. Called whenever the section, the
+-- search text or any setting changes. It decides which rows are visible
+-- (current section, or search matches), stacks them top to bottom by
+-- tracking a y offset, then updates the left-menu highlights and counts.
 local function RefreshList()
   if not win then return end
   local y, counts, total = -4, {}, 0
@@ -399,8 +474,11 @@ local function RefreshList()
   win.modeBtn.text:SetText("Tank mode: " .. LabelFor(TANK_MODES, ns.db.general.tankMode):gsub(" %(.*%)", ""))
 end
 
+-- BuildWindow(): creates every piece of the window once, the first time it's
+-- opened. Pieces, in order: frame, title bar, search bar, top buttons, left
+-- menu, scrolling content (all the rows), footer.
 local function BuildWindow()
-  win = CreateFrame("Frame", "BulwarkOptions", UIParent, "BackdropTemplate")
+  win = CreateFrame("Frame", "MetrotankOptions", UIParent, "BackdropTemplate")
   win:SetSize(720, 540)
   win:SetPoint("CENTER")
   win:SetFrameStrata("DIALOG")
@@ -410,7 +488,7 @@ local function BuildWindow()
   win:RegisterForDrag("LeftButton")
   win:SetScript("OnDragStart", win.StartMoving)
   win:SetScript("OnDragStop", win.StopMovingOrSizing)
-  table.insert(UISpecialFrames, "BulwarkOptions") -- Esc closes it
+  table.insert(UISpecialFrames, "MetrotankOptions") -- Esc closes it
 
   -- Title bar
   local title = CreateFrame("Frame", nil, win, "BackdropTemplate")
@@ -420,7 +498,7 @@ local function BuildWindow()
   icon:SetSize(24, 24); icon:SetPoint("LEFT", 14, 0)
   icon:SetTexture("Interface\\Icons\\Ability_Warrior_DefensiveStance")
   icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-  local t = Text(title, "GameFontNormalLarge", 16, 1, 1, 1); t:SetPoint("LEFT", icon, "RIGHT", 10, 0); t:SetText("Bulwark")
+  local t = Text(title, "GameFontNormalLarge", 16, 1, 1, 1); t:SetPoint("LEFT", icon, "RIGHT", 10, 0); t:SetText("Metrotank")
   local v = Text(title, "GameFontHighlightSmall", 11, unpack(C.muted)); v:SetPoint("LEFT", t, "RIGHT", 8, -1)
   v:SetText("Tank Alerts  v" .. ns.version)
   local close = CreateFrame("Button", nil, title, "UIPanelCloseButton")
@@ -441,6 +519,7 @@ local function BuildWindow()
   win.placeholder:SetText("Search options... (try \"sound\", \"color\", \"cc\")")
   win.results = Text(sb, "GameFontHighlightSmall", 11, unpack(C.muted))
   win.results:SetPoint("RIGHT", -10, 0)
+  -- every keystroke: store the trimmed, lowercase text in `query`, then redraw
   sb:SetScript("OnTextChanged", function(self)
     query = (self:GetText() or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
     RefreshList()
@@ -451,7 +530,8 @@ local function BuildWindow()
   sb:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
   win.search = sb
 
-  -- Pills
+  -- Pills: "Tank mode" cycles auto > always > off; "Test alerts" fires a fake
+  -- threat-lost banner, then a fake CC-broken one 1.2 seconds later.
   win.modeBtn = MakeButton(win, "Tank mode", 130, function()
     local cur, nextIndex = ns.db.general.tankMode, 1
     for i, m in ipairs(TANK_MODES) do if m.key == cur then nextIndex = (i % #TANK_MODES) + 1 end end
@@ -464,7 +544,7 @@ local function BuildWindow()
   end)
   testBtn:SetPoint("LEFT", win.modeBtn, "RIGHT", 8, 0); testBtn:SetHeight(32)
 
-  -- Left menu
+  -- Left menu: one button per entry in SECTIONS
   local side = CreateFrame("Frame", nil, win, "BackdropTemplate")
   side:SetPoint("TOPLEFT", 0, -100); side:SetPoint("BOTTOMLEFT", 0, 50); side:SetWidth(180)
   Skin(side, C.panel)
@@ -495,6 +575,8 @@ local function BuildWindow()
   win.content:SetSize(ROW_W, 10)
   scroll:SetScrollChild(win.content)
 
+  -- This is where the OPTIONS list becomes real rows. All of them are built
+  -- up front; RefreshList later shows/hides them.
   for _, opt in ipairs(OPTIONS) do
     table.insert(rows, CreateRow(win.content, opt))
   end
@@ -517,12 +599,16 @@ local function BuildWindow()
   win:Hide()
 end
 
+-- Open/close the window, building it on first use.
 local function Toggle()
   if not win then BuildWindow() end
   if win:IsShown() then win:Hide() else win:Show(); RefreshList() end
 end
 ns.ToggleOptions = Toggle
 
+-- ns:Listen / ns:Fire is Metrotank's tiny event system (defined in Core.lua).
+-- TOGGLE_OPTIONS is fired by the /metrotank command; SETTING_CHANGED is fired
+-- whenever any setting changes, so the open window redraws itself.
 ns:Listen("TOGGLE_OPTIONS", Toggle)
 ns:Listen("SETTING_CHANGED", function() if win and win:IsShown() then RefreshList() end end)
 
@@ -532,14 +618,14 @@ ns:Listen("SETTING_CHANGED", function() if win and win:IsShown() then RefreshLis
 ns:Listen("LOGIN", function()
   if not (Settings and Settings.RegisterCanvasLayoutCategory) then return end
   local panel = CreateFrame("Frame")
-  local h = Text(panel, "GameFontNormalLarge"); h:SetPoint("TOPLEFT", 16, -16); h:SetText("Bulwark - Tank Alerts")
+  local h = Text(panel, "GameFontNormalLarge"); h:SetPoint("TOPLEFT", 16, -16); h:SetText("Metrotank - Tank Alerts")
   local d = Text(panel, "GameFontHighlight"); d:SetPoint("TOPLEFT", h, "BOTTOMLEFT", 0, -8)
-  d:SetText("All options live in Bulwark's own window (with search). You can also type /bulwark.")
-  local b = MakeButton(panel, "Open Bulwark options", 180, function()
+  d:SetText("All options live in Metrotank's own window (with search). You can also type /metrotank.")
+  local b = MakeButton(panel, "Open Metrotank options", 180, function()
     if SettingsPanel and SettingsPanel:IsShown() then HideUIPanel(SettingsPanel) end
     if not win or not win:IsShown() then Toggle() end
   end, true)
   b:SetPoint("TOPLEFT", d, "BOTTOMLEFT", 0, -14)
-  local category = Settings.RegisterCanvasLayoutCategory(panel, "Bulwark")
+  local category = Settings.RegisterCanvasLayoutCategory(panel, "Metrotank")
   Settings.RegisterAddOnCategory(category)
 end)
