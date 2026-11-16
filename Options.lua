@@ -501,8 +501,12 @@ local function BuildWindow()
   local t = Text(title, "GameFontNormalLarge", 16, 1, 1, 1); t:SetPoint("LEFT", icon, "RIGHT", 10, 0); t:SetText("Metrotank")
   local v = Text(title, "GameFontHighlightSmall", 11, unpack(C.muted)); v:SetPoint("LEFT", t, "RIGHT", 8, -1)
   v:SetText("Tank Alerts  v" .. ns.version)
+  -- Close button. The UIPanelCloseButton template hides its PARENT when clicked,
+  -- and the parent here is the title bar, so we set our own click handler that
+  -- hides the whole window instead.
   local close = CreateFrame("Button", nil, title, "UIPanelCloseButton")
   close:SetPoint("RIGHT", -6, 0)
+  close:SetScript("OnClick", function() win:Hide() end)
 
   -- Search bar
   local sb = CreateFrame("EditBox", nil, win, "BackdropTemplate")

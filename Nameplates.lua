@@ -10,6 +10,9 @@
     overlay.ccActive    -> true while the mob is crowd-controlled
     overlay.brokenUntil -> GetTime() value; show "CC BROKEN" until then
     overlay.secretColor -> a color we can show but not read (dungeons)
+    overlay.lastThreat  -> the threat state from the previous check, so
+                           Threat.lua can spot a change ("hold" -> "lost").
+                           Owned by Threat.lua, which clears it on PLATE_ADDED.
 ]]
 
 local _, ns = ...

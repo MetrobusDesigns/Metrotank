@@ -153,6 +153,14 @@ ns:On("UNIT_THREAT_LIST_UPDATE", function(_, unit)
   end
 end)
 
+-- Nameplate frames get recycled: the overlay that was on mob A is reused for
+-- mob B later. Forget what we knew about the old mob, otherwise "you were
+-- holding A" + "B is on someone else" looks like you just LOST a mob.
+-- (PLATE_ADDED is fired by Nameplates.lua every time a plate appears.)
+ns:Listen("PLATE_ADDED", function(_, o)
+  o.lastThreat = nil
+end)
+
 ns:Listen("DB_READY", BuildCurve)
 ns:Listen("SETTING_CHANGED", function(path)
   if path and (path[1] == "colors" or #path == 0) then BuildCurve() end
