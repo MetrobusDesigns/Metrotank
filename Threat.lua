@@ -154,9 +154,9 @@ ns:On("UNIT_THREAT_LIST_UPDATE", function(_, unit)
 end)
 
 -- Nameplate frames get recycled: the overlay that was on mob A is reused for
--- mob B later. Forget what we knew about the old mob, otherwise "you were
--- holding A" + "B is on someone else" looks like you just LOST a mob.
--- (PLATE_ADDED is fired by Nameplates.lua every time a plate appears.)
+-- mob B. o.lastThreat is our memory of the PREVIOUS mob's threat, so forget it
+-- when a plate is handed a new mob. Without this, holding mob A and then seeing
+-- its plate reused for a mob that's on someone else looked like "threat lost".
 ns:Listen("PLATE_ADDED", function(_, o)
   o.lastThreat = nil
 end)

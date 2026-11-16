@@ -46,6 +46,7 @@ ns.defaults = {
     recolorBar  = true,   -- only for Blizzard's own nameplates
     showTag     = true,
     showIcon    = true,
+    showArrow   = true,   -- yellow arrow above a mob you lost threat on
     pulseOnLost = true,
   },
   colors = {

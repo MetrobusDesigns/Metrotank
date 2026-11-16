@@ -141,6 +141,7 @@ local OPTIONS = {
   { s = "plates", type = "toggle", label = "Recolor health bar", desc = "Blizzard nameplates only", path = { "plates", "recolorBar" }, keys = "color colour bar" },
   { s = "plates", type = "toggle", label = "Show state label", desc = "Small text under the plate: LOST, CC'D...", path = { "plates", "showTag" }, keys = "text tag" },
   { s = "plates", type = "toggle", label = "Show icon", desc = "Small icon beside the plate", path = { "plates", "showIcon" }, keys = "icon" },
+  { s = "plates", type = "toggle", label = "Lost-threat arrow", desc = "Fast-pulsing yellow triangle above a mob you lost", path = { "plates", "showArrow" }, keys = "arrow triangle marker lost" },
   { s = "plates", type = "toggle", label = "Pulse when lost / broken", desc = "Border blinks to catch your eye", path = { "plates", "pulseOnLost" }, keys = "flash blink animation" },
 
   -- Sounds
@@ -210,10 +211,25 @@ local function MakeDropdown(row, opt, list, rightOffset)
   b:SetScript("OnClick", function(self)
     if MenuUtil and MenuUtil.CreateContextMenu then
       MenuUtil.CreateContextMenu(self, function(_, root)
+        -- Items with a "group" (the sounds) go into a submenu named after the
+        -- group, so a long list doesn't run off the screen. Each submenu is
+        -- created the first time one of its items shows up.
+        local submenus = {}
         for _, item in ipairs(list) do
-          root:CreateRadio(item.label,
+          local parent = root
+          if item.group then
+            if not submenus[item.group] then
+              submenus[item.group] = root:CreateButton(item.group)
+            end
+            parent = submenus[item.group]
+          end
+          parent:CreateRadio(item.label,
             function() return ns.Get(opt.path) == item.key end,
-            function() ns.Set(opt.path, item.key) end)
+            function()
+              ns.Set(opt.path, item.key)
+              -- sound pickers play the sound you just picked (true = skip the cooldown)
+              if opt.type == "sound" then ns.PlayAlertSound(item.key, true) end
+            end)
         end
       end)
     else
@@ -229,9 +245,10 @@ end
 
 -- Sound picker: a dropdown (built from ns.Sounds in Alerts.lua, so adding a
 -- sound there adds it here automatically) plus a ">" button that previews it.
+-- Each sound's "group" is copied too, so MakeDropdown can sort them into submenus.
 local function MakeSound(row, opt)
   local list = {}
-  for _, s in ipairs(ns.Sounds) do table.insert(list, { key = s.key, label = s.label }) end
+  for _, s in ipairs(ns.Sounds) do table.insert(list, { key = s.key, label = s.label, group = s.group }) end
   local play = CreateFrame("Button", nil, row, "BackdropTemplate")
   play:SetSize(26, 26)
   play:SetPoint("RIGHT", -12, 0)

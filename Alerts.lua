@@ -12,15 +12,110 @@ local _, ns = ...
 -- a fallback in case the name is missing on this client.
 -- To add your own .ogg file: put it in Metrotank\Media\ and add an entry with
 --   file = "Interface\\AddOns\\Metrotank\\Media\\myfile.ogg"
+-- "group" is the submenu the sound appears under in the options dropdown.
+-- A sound with no group (like "None") sits at the top of the menu.
 ---------------------------------------------------------------------------
 ns.Sounds = {
   { key = "NONE",         label = "None" },
-  { key = "RAID_WARNING", label = "Raid Warning", kit = "RAID_WARNING", id = 8959 },
-  { key = "MAP_PING",     label = "Map Ping",     kit = "MAP_PING",     id = 3175 },
-  { key = "READY_CHECK",  label = "Ready Check",  kit = "READY_CHECK",  id = 8960 },
-  { key = "ALARM",        label = "Alarm Clock",  kit = "ALARM_CLOCK_WARNING_3", id = 12889 },
-  { key = "WHISPER",      label = "Whisper",      kit = "TELL_MESSAGE", id = 3081 },
+  { key = "RAID_WARNING", label = "Raid Warning", kit = "RAID_WARNING", id = 8959, group = "Warnings" },
+  { key = "MAP_PING",     label = "Map Ping",     kit = "MAP_PING",     id = 3175, group = "Pings & Chat" },
+  { key = "READY_CHECK",  label = "Ready Check",  kit = "READY_CHECK",  id = 8960, group = "Group & Queue" },
+  { key = "ALARM",        label = "Alarm Clock",  kit = "ALARM_CLOCK_WARNING_3", id = 12889, group = "Warnings" },
+  { key = "WHISPER",      label = "Whisper",      kit = "TELL_MESSAGE", id = 3081, group = "Pings & Chat" },
 }
+
+-- Adds one built-in game sound to the list above.
+-- The SOUNDKIT name doubles as the saved key, so only write it once.
+local function AddSound(group, label, kit, id)
+  table.insert(ns.Sounds, { key = kit, label = label, kit = kit, id = id, group = group })
+end
+
+-- 75 more sounds from the game. Names and numbers are copied from Blizzard's
+-- SoundKitConstants.lua. If a sound doesn't exist on this client it simply
+-- plays nothing (no error), so it's safe to leave it in the list.
+AddSound("Warnings", "Boss Emote",       "RAID_BOSS_EMOTE_WARNING",              12197)
+AddSound("Warnings", "Boss Whisper",     "UI_RAID_BOSS_WHISPER_WARNING",         37666)
+AddSound("Warnings", "Loss of Control",  "UI_LOSS_OF_CONTROL_START",             34468)
+AddSound("Warnings", "GM Warning",       "GM_CHAT_WARNING",                      15273)
+AddSound("Warnings", "Alarm Clock 1",    "ALARM_CLOCK_WARNING_1",                18871)
+AddSound("Warnings", "Alarm Clock 2",    "ALARM_CLOCK_WARNING_2",                12867)
+AddSound("Warnings", "Invasion Alert",   "UI_GARRISON_TOAST_INVASION_ALERT",     44292)
+AddSound("Warnings", "Notice Warning",   "BEHAVIORAL_NOTIFICATION_WARNING",      188250)
+AddSound("Warnings", "Abandon Vote",     "UI_INSTANCE_ABANDON_VOTE",             297918)
+AddSound("Warnings", "Lost Target",      "INTERFACE_SOUND_LOST_TARGET_UNIT",     684)
+AddSound("Warnings", "Aggro Select",     "IG_CREATURE_AGGRO_SELECT",             873)
+AddSound("Warnings", "Threat Countered", "UI_GARRISON_MISSION_THREAT_COUNTERED", 43505)
+
+AddSound("Group & Queue", "Role Check",        "LFG_ROLE_CHECK",                      17317)
+AddSound("Group & Queue", "Dungeon Rewards",   "LFG_REWARDS",                         17316)
+AddSound("Group & Queue", "LFG Denied",        "LFG_DENIED",                          17341)
+AddSound("Group & Queue", "Group Application", "UI_GROUP_FINDER_RECEIVE_APPLICATION", 47615)
+AddSound("Group & Queue", "PvP Queue Joined",  "PVP_ENTER_QUEUE",                     8458)
+AddSound("Group & Queue", "PvP Queue Ready",   "PVP_THROUGH_QUEUE",                   8459)
+AddSound("Group & Queue", "Pet Queue Ready",   "UI_PET_BATTLES_PVP_THROUGH_QUEUE",    36609)
+AddSound("Group & Queue", "PvP Update",        "IG_PVP_UPDATE",                       4574)
+AddSound("Group & Queue", "War Mode On",       "UI_WARMODE_ACTIVATE",                 118563)
+AddSound("Group & Queue", "War Mode Off",      "UI_WARMODE_DECTIVATE",                118564) -- (Blizzard's spelling)
+AddSound("Group & Queue", "Group Invite",      "IG_PLAYER_INVITE",                    880)
+
+AddSound("Countdowns", "Countdown Tick",    "UI_COUNTDOWN_TIMER",                  158565)
+AddSound("Countdowns", "Countdown Done",    "UI_COUNTDOWN_FINISHED",               158566)
+AddSound("Countdowns", "Timer Bar Start",   "UI_COUNTDOWN_BAR_STATE_STARTS",       158958)
+AddSound("Countdowns", "Timer Bar Done",    "UI_COUNTDOWN_BAR_STATE_FINISHED",     158959)
+AddSound("Countdowns", "Big Number Done",   "UI_COUNTDOWN_MEDIUM_NUMBER_FINISHED", 158960)
+AddSound("Countdowns", "BG Countdown Tick", "UI_BATTLEGROUND_COUNTDOWN_TIMER",     25477)
+AddSound("Countdowns", "BG Countdown Go",   "UI_BATTLEGROUND_COUNTDOWN_FINISHED",  25478)
+
+AddSound("Pings & Chat", "Battle.net Toast",   "UI_BNET_TOAST",                  18019)
+AddSound("Pings & Chat", "Social Queue Toast", "UI_71_SOCIAL_QUEUEING_TOAST",    79739)
+AddSound("Pings & Chat", "Event Chime",        "UI_EVENT_SCHEDULER_CHIME",       278769)
+AddSound("Pings & Chat", "Waypoint Track",     "UI_MAP_WAYPOINT_SUPER_TRACK_ON", 170270)
+AddSound("Pings & Chat", "Waypoint Place",     "UI_MAP_WAYPOINT_CLICK_TO_PLACE", 170269)
+AddSound("Pings & Chat", "Waypoint Remove",    "UI_MAP_WAYPOINT_REMOVE",         170273)
+AddSound("Pings & Chat", "Voice Join",         "UI_VOICECHAT_JOINCHANNEL",       110981)
+AddSound("Pings & Chat", "Voice Leave",        "UI_VOICECHAT_LEAVECHANNEL",      110982)
+AddSound("Pings & Chat", "Voice Talk Start",   "UI_VOICECHAT_TALKSTART",         110983)
+
+AddSound("Loot & Money", "Epic Loot",        "UI_EPICLOOT_TOAST",                  31578)
+AddSound("Loot & Money", "Legendary Loot",   "UI_LEGENDARY_LOOT_TOAST",            63971)
+AddSound("Loot & Money", "Personal Loot",    "UI_PERSONAL_LOOT_BANNER",            50893)
+AddSound("Loot & Money", "Lesser Item Won",  "UI_RAID_LOOT_TOAST_LESSER_ITEM_WON", 51402)
+AddSound("Loot & Money", "Warforged Loot",   "UI_WARFORGED_ITEM_LOOT_TOAST",       51561)
+AddSound("Loot & Money", "Bonus Roll Start", "UI_BONUS_LOOT_ROLL_START",           31579)
+AddSound("Loot & Money", "Bonus Roll End",   "UI_BONUS_LOOT_ROLL_END",             31581)
+AddSound("Loot & Money", "Roll Won",         "UI_NEED_ROLL_POSITIVE",              229319)
+AddSound("Loot & Money", "Roll Lost",        "UI_NEED_ROLL_NEGATIVE",              229321)
+AddSound("Loot & Money", "Rolled 100",       "UI_NEED_ROLL_ONE_HUNDRED",           230489)
+AddSound("Loot & Money", "Coins",            "LOOT_WINDOW_COIN_SOUND",             120)
+AddSound("Loot & Money", "Item Repair",      "ITEM_REPAIR",                        7994)
+
+AddSound("Victory & Defeat", "Boss Defeated",      "UI_RAID_BOSS_DEFEATED",                             50111)
+AddSound("Victory & Defeat", "Challenge Record",   "UI_CHALLENGES_NEW_RECORD",                          33338)
+AddSound("Victory & Defeat", "Mythic+ Record",     "UI_70_CHALLENGE_MODE_NEW_RECORD",                   74438)
+AddSound("Victory & Defeat", "Keystone Upgrade",   "UI_70_CHALLENGE_MODE_KEYSTONE_UPGRADE",             74437)
+AddSound("Victory & Defeat", "Mythic+ Complete",   "UI_70_CHALLENGE_MODE_COMPLETE_NO_UPGRADE",          74526)
+AddSound("Victory & Defeat", "Scenario Ending",    "UI_SCENARIO_ENDING",                                31754)
+AddSound("Victory & Defeat", "Scenario Stage End", "UI_SCENARIO_STAGE_END",                             31757)
+AddSound("Victory & Defeat", "Mission Cheers",     "UI_MISSION_SUCCESS_CHEERS",                         74702)
+AddSound("Victory & Defeat", "Mission Complete",   "UI_GARRISON_TOAST_MISSION_COMPLETE",                44294)
+AddSound("Victory & Defeat", "Mission Failed",     "UI_GARRISON_MISSION_COMPLETE_MISSION_FAIL_STINGER", 43503)
+AddSound("Victory & Defeat", "Encounter Failed",   "UI_GARRISON_MISSION_COMPLETE_ENCOUNTER_FAIL",       43501)
+AddSound("Victory & Defeat", "Prestige Rank Up",   "UI_PVP_HONOR_PRESTIGE_RANK_UP",                     77003)
+
+AddSound("Quests & Toasts", "Auto Quest Complete", "UI_AUTO_QUEST_COMPLETE",       23404)
+AddSound("Quests & Toasts", "Quest Complete",      "IG_QUEST_LIST_COMPLETE",       878)
+AddSound("Quests & Toasts", "Quest Abandoned",     "IG_QUEST_LOG_ABANDON_QUEST",   846)
+AddSound("Quests & Toasts", "World Quest Start",   "UI_WORLDQUEST_START",          73275)
+AddSound("Quests & Toasts", "World Quest Done",    "UI_WORLDQUEST_COMPLETE",       73277)
+AddSound("Quests & Toasts", "Dig Site Complete",   "UI_DIG_SITE_COMPLETION_TOAST", 38326)
+AddSound("Quests & Toasts", "Talents Unlocked",    "UI_HERO_TALENTS_UNLOCKED",     283863)
+
+AddSound("Interface", "Pet Battle Start", "UI_PET_BATTLE_START",     31584)
+AddSound("Interface", "Tutorial Popup",   "TUTORIAL_POPUP",          7355)
+AddSound("Interface", "NPC Select",       "IG_CHARACTER_NPC_SELECT", 867)
+AddSound("Interface", "Page Turn",        "IG_ABILITY_PAGE_TURN",    836)
+AddSound("Interface", "Auction Open",     "AUCTION_WINDOW_OPEN",     5274)
+
 -- this function loops through ns.Sounds with ipairs and returns a sound  with s.key
  function ns.GetSound(key)
   for _, s in ipairs(ns.Sounds) do

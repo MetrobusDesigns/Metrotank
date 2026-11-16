@@ -4,15 +4,13 @@
   Puts a colored border, a small icon and a short label ("LOST", "CC'D"...)
   on each enemy nameplate. Works on top of Blizzard plates, Plater, Platynator
   or EllesmereUI because we only ADD our own frame — we never replace theirs.
+  A mob you LOST threat on also gets a fast-pulsing yellow arrow above it.
 
   Each nameplate gets one "overlay" table that remembers:
     overlay.threat      -> "hold", "slip", "lost", "other" or nil
     overlay.ccActive    -> true while the mob is crowd-controlled
     overlay.brokenUntil -> GetTime() value; show "CC BROKEN" until then
     overlay.secretColor -> a color we can show but not read (dungeons)
-    overlay.lastThreat  -> the threat state from the previous check, so
-                           Threat.lua can spot a change ("hold" -> "lost").
-                           Owned by Threat.lua, which clears it on PLATE_ADDED.
 ]]
 
 local _, ns = ...
@@ -33,6 +31,14 @@ local ICONS = {
   cc     = "Interface\\Icons\\Spell_Nature_Polymorph",
   broken = "Interface\\Icons\\Spell_Nature_LightningShield",
 }
+
+-- Lost-threat arrow: a yellow triangle above the plate, pointing down at it.
+-- Change these numbers to tweak how it looks.
+local ARROW_COLOR = { 1.00, 1.00, 0.00 } -- solid yellow (red, green, blue)
+local ARROW_ROWS  = 8    -- the triangle is 8 stacked bars...
+local ARROW_ROW_H = 2    -- ...each 2 px tall, so 16 px tall and 16 px wide
+local ARROW_GAP   = 16   -- px above the health bar (leaves room for the mob's name)
+local ARROW_PULSE = 0.15 -- seconds per blink; smaller = faster
 
 ---------------------------------------------------------------------------
 -- Find the health bar of whatever nameplate addon is in use
@@ -90,6 +96,42 @@ local function CreateOverlay(plate)
   local a = o.pulse:CreateAnimation("Alpha")
   a:SetFromAlpha(1); a:SetToAlpha(0.35); a:SetDuration(0.35)
 
+  -- Lost-threat arrow. It gets its own small frame so it can pulse by itself,
+  -- faster than the border. The triangle is drawn as stacked bars that get
+  -- narrower toward the bottom: 16 px wide at the top, 2 px wide at the tip.
+  o.arrow = CreateFrame("Frame", nil, o)
+  o.arrow:SetSize(ARROW_ROWS * 2, ARROW_ROWS * ARROW_ROW_H)
+  o.arrow:SetPoint("BOTTOM", o, "TOP", 0, ARROW_GAP)
+  for row = 1, ARROW_ROWS do
+    local width = (ARROW_ROWS - row + 1) * 2   -- 16, 14, 12 ... 2
+    local y = -(row - 1) * ARROW_ROW_H         -- each bar sits below the last
+    -- one solid yellow bar (no outline, so the whole arrow is plain yellow)
+    local bar = o.arrow:CreateTexture(nil, "ARTWORK")
+    bar:SetColorTexture(ARROW_COLOR[1], ARROW_COLOR[2], ARROW_COLOR[3], 1)
+    bar:SetSize(width, ARROW_ROW_H)
+    bar:SetPoint("TOP", 0, y)
+  end
+  o.arrow:Hide()
+
+  -- Without this the arrow would also fade with the slower border pulse above.
+  if o.arrow.SetIgnoreParentAlpha then o.arrow:SetIgnoreParentAlpha(true) end
+
+  -- fast pulse for the arrow: it blinks (alpha) and throbs (scale) together
+  o.arrowPulse = o.arrow:CreateAnimationGroup()
+  o.arrowPulse:SetLooping("BOUNCE")
+  local blink = o.arrowPulse:CreateAnimation("Alpha")
+  blink:SetFromAlpha(1); blink:SetToAlpha(0.3); blink:SetDuration(ARROW_PULSE)
+  local throb = o.arrowPulse:CreateAnimation("Scale")
+  throb:SetDuration(ARROW_PULSE)
+  throb:SetOrigin("BOTTOM", 0, 0) -- grow from the tip, so the tip stays put
+  -- (the function names differ between game versions; without either one the
+  --  arrow simply blinks without changing size)
+  if throb.SetScaleFrom then
+    throb:SetScaleFrom(1, 1); throb:SetScaleTo(1.3, 1.3)
+  elseif throb.SetFromScale then
+    throb:SetFromScale(1, 1); throb:SetToScale(1.3, 1.3)
+  end
+
   return o
 end
 
@@ -118,6 +160,7 @@ function ns.RenderOverlay(o)
   if not ns.db.general.enabled or (not state and not o.secretColor) then
     o:Hide()
     o.pulse:Stop()
+    o.arrowPulse:Stop()
     ns.RestoreBarColor(o)
     return
   end
@@ -161,6 +204,15 @@ function ns.RenderOverlay(o)
     o.icon:Show()
   else
     o.icon:Hide()
+  end
+
+  -- lost-threat arrow: only on a mob we KNOW we lost
+  if db.showArrow and state == "lost" then
+    o.arrow:Show()
+    if not o.arrowPulse:IsPlaying() then o.arrowPulse:Play() end
+  else
+    o.arrowPulse:Stop()
+    o.arrow:Hide()
   end
 
   if db.pulseOnLost and (state == "lost" or state == "broken") then
@@ -211,6 +263,7 @@ ns:On("NAME_PLATE_UNIT_REMOVED", function(_, unit)
   local o = ns.overlays[unit]
   if o then
     o.pulse:Stop()
+    o.arrowPulse:Stop()
     ns.RestoreBarColor(o)
     o:Hide()
     o.unit = nil
