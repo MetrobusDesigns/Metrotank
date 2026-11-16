@@ -193,22 +193,55 @@ end
 ---------------------------------------------------------------------------
 local banners = {}
 local locked = true
+local MIN_SCALE, MAX_SCALE = 0.5, 2.0 -- keep in sync with the size sliders in Options.lua
+
+function ns.BannersLocked() return locked end
+
+-- The banner's size setting, e.g. ns.db.banners.threatScale (1 = normal size).
+local function GetScale(key)
+  local s = tonumber(ns.db.banners[key .. "Scale"]) or 1
+  return math.min(MAX_SCALE, math.max(MIN_SCALE, s))
+end
+
+-- Saves where the banner's CENTER is, in UIParent units. Storing it this way
+-- (not in the banner's own scaled units) means changing the size later
+-- grows/shrinks the banner in place instead of making it jump around.
+local function SavePosition(f, key)
+  local cx, cy = f:GetCenter()
+  if not cx then return end
+  local s = f:GetScale()
+  ns.db.banners[key] = { cx = cx * s, cy = cy * s }
+end
+
+-- Applies the saved size and position (or the default spot) to one banner.
+-- Anchor offsets are in the banner's own scaled units, hence the "/ s".
+local function ApplyLayout(f)
+  local key, s = f.key, GetScale(f.key)
+  local pos = ns.db.banners[key]
+  f:SetScale(s)
+  f:ClearAllPoints()
+  if type(pos) == "table" and pos.cx then
+    f:SetPoint("CENTER", UIParent, "BOTTOMLEFT", pos.cx / s, pos.cy / s)
+  elseif type(pos) == "table" and pos.point then
+    -- position saved by an older version (before banners could be scaled)
+    f:SetPoint(pos.point, UIParent, pos.relPoint, pos.x / s, pos.y / s)
+  else
+    f:SetPoint("TOP", UIParent, "TOP", 0, f.defaultY / s)
+  end
+end
 
 local function CreateBanner(key, yOffset, borderColor, big)
   local f = CreateFrame("Frame", "MetrotankBanner_" .. key, UIParent, "BackdropTemplate")
+  f.key, f.defaultY = key, yOffset
   f:SetSize(big and 420 or 380, big and 64 or 40)
   f:SetFrameStrata("HIGH")
+  f:SetClampedToScreen(true)
   f:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 2 })
   f:SetBackdropColor(0.06, 0.03, 0.03, 0.82)
   f:SetBackdropBorderColor(borderColor.r, borderColor.g, borderColor.b, 1)
 
-  -- restore saved position, otherwise use the default spot
-  local pos = ns.db.banners[key]
-  if pos then
-    f:SetPoint(pos.point, UIParent, pos.relPoint, pos.x, pos.y)
-  else
-    f:SetPoint("TOP", UIParent, "TOP", 0, yOffset)
-  end
+  -- restore saved size + position, otherwise use the default spot
+  ApplyLayout(f)
 
   f.title = f:CreateFontString(nil, "OVERLAY", big and "GameFontNormalHuge" or "GameFontNormalLarge")
   f.title:SetTextColor(1, 1, 1)
@@ -236,14 +269,21 @@ local function CreateBanner(key, yOffset, borderColor, big)
   fade:SetFromAlpha(1); fade:SetToAlpha(0); fade:SetDuration(0.6); fade:SetOrder(2)
   f.anim:SetScript("OnFinished", function() if locked then f:Hide() end end)
 
-  -- dragging (only when unlocked with /metrotank unlock)
+  -- dragging + mouse-wheel resizing (only when unlocked with /metrotank unlock
+  -- or the "Move alert banners" button in the options)
   f:SetMovable(true)
   f:RegisterForDrag("LeftButton")
   f:SetScript("OnDragStart", function(self) if not locked then self:StartMoving() end end)
   f:SetScript("OnDragStop", function(self)
     self:StopMovingOrSizing()
-    local point, _, relPoint, x, y = self:GetPoint()
-    ns.db.banners[key] = { point = point, relPoint = relPoint, x = x, y = y }
+    self:SetUserPlaced(false) -- we save the position ourselves
+    SavePosition(self, key)
+    ApplyLayout(self)
+  end)
+  f:SetScript("OnMouseWheel", function(_, delta)
+    if locked then return end
+    local s = math.floor((GetScale(key) + delta * 0.1) * 10 + 0.5) / 10
+    ns.Set({ "banners", key .. "Scale" }, math.min(MAX_SCALE, math.max(MIN_SCALE, s)))
   end)
 
   f:Hide()
@@ -306,16 +346,32 @@ ns:Listen("DB_READY", function()
   CreateBanner("cc", -215, ns.db.colors.broken, false)
 end)
 
+-- Re-apply size/position when a banner setting changes, the Alert Banners
+-- page is reset, or everything is reset (path is empty then).
+ns:Listen("SETTING_CHANGED", function(path)
+  if path and path[1] ~= nil and path[1] ~= "banners" then return end
+  for _, f in pairs(banners) do ApplyLayout(f) end
+end)
+
+-- Forget the dragged positions (sizes are kept).
+function ns.ResetBannerPositions()
+  ns.db.banners.threat, ns.db.banners.cc = nil, nil
+  ns:Fire("SETTING_CHANGED", { "banners" }, nil)
+end
+
 ns:Listen("TOGGLE_BANNER_LOCK", function()
   locked = not locked
   for _, f in pairs(banners) do
     f:EnableMouse(not locked)
+    f:EnableMouseWheel(not locked)
+    -- while unlocked, sit above the options window so they can be dragged
+    f:SetFrameStrata(locked and "HIGH" or "FULLSCREEN_DIALOG")
     if locked then f:Hide() else f.anim:Stop(); f:SetAlpha(1); f:Show() end
   end
   if not locked then
     banners.threat.title:SetText("THREAT LOST")
-    banners.threat.sub:SetText("Drag me, then type /metrotank lock")
-    banners.cc.title:SetText("CC BROKEN - drag me")
+    banners.threat.sub:SetText("Drag to move, mouse wheel to resize")
+    banners.cc.title:SetText("CC BROKEN - drag / scroll me")
   end
   ns.Print(locked and "banners locked." or "banners unlocked - drag them where you like.")
 end)

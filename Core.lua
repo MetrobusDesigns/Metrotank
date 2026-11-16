@@ -65,7 +65,11 @@ ns.defaults = {
     showOnBanner = true,
     spell        = "",   -- empty = pick automatically from your class
   },
-  banners = {},          -- saved banner positions (filled when you drag them)
+  banners = {
+    threatScale = 1,     -- size of the THREAT LOST banner (1 = normal)
+    ccScale     = 1,     -- size of the CC BROKEN banner
+    -- banners.threat / banners.cc hold the dragged positions (added when you drag them)
+  },
 }
 
 ---------------------------------------------------------------------------

@@ -71,6 +71,7 @@ local SECTIONS = {
   { key = "general",  label = "General",        color = { 0.55, 0.58, 0.65 } },
   { key = "threat",   label = "Threat",         color = { 1.00, 0.30, 0.30 } },
   { key = "cc",       label = "Crowd Control",  color = { 0.78, 0.42, 1.00 } },
+  { key = "banners",  label = "Alert Banners",  color = { 1.00, 0.60, 0.24 } },
   { key = "plates",   label = "Nameplates",     color = { 0.24, 0.81, 0.43 } },
   { key = "sounds",   label = "Sounds",         color = { 0.95, 0.76, 0.19 } },
   { key = "taunt",    label = "Taunt Cooldown", color = { 0.31, 0.70, 1.00 } },
@@ -104,7 +105,8 @@ local CHANNELS = {
 --   choice  choices = a list like TANK_MODES
 --   slider  min, max, step, and fmt (how the number is printed, e.g. "%d s")
 --   colors  colors = { { "dbKey", "Label" }, ... }
---   button  button = text on the button, run = function to call when clicked
+--   button  button = text on the button (or a function returning it, re-read on
+--           every refresh), run = function to call when clicked
 -- type: header | toggle | choice | sound | slider | colors | text | button
 local OPTIONS = {
   -- General
@@ -114,26 +116,37 @@ local OPTIONS = {
   { s = "general", type = "toggle", label = "Debug messages", desc = "Print what the addon sees to chat (for testing)", path = { "general", "debug" }, keys = "test print chat" },
 
   -- Threat
+  { s = "threat", type = "header", label = "Colors" },
+  { s = "threat", type = "colors", label = "Threat colors", colors = { { "hold", "Holding" }, { "slip", "Slipping" }, { "lost", "Lost" }, { "other", "Other tank" } }, keys = "color colour" },
   { s = "threat", type = "header", label = "Threat alerts" },
-  { s = "threat", type = "toggle", label = "Alert me when I lose threat", desc = "Banner + sound when a mob turns away from you", path = { "threat", "alertLost" }, keys = "aggro warning banner" },
+  { s = "threat", type = "toggle", label = "Alert when I lose threat", desc = "Banner + sound when a mob targets another player", path = { "threat", "alertLost" }, keys = "aggro warning banner" },
   { s = "threat", type = "toggle", label = "Warn when threat is slipping", desc = "Someone is close to pulling the mob off you", path = { "threat", "alertSlipping" }, keys = "aggro close" },
   { s = "threat", type = "toggle", label = "Show threat banner", desc = "Big center-screen message", path = { "threat", "showBanner" }, keys = "text screen" },
   { s = "threat", type = "toggle", label = "Only in a group", desc = "Stay quiet while soloing", path = { "threat", "onlyInGroup" }, keys = "solo party" },
   { s = "threat", type = "sound",  label = "Lost-threat sound", desc = "Plays once per mob, then waits for the cooldown", path = { "threat", "lostSound" }, keys = "audio noise" },
   { s = "threat", type = "sound",  label = "Slipping sound", desc = "Optional softer warning", path = { "threat", "slipSound" }, keys = "audio noise" },
-  { s = "threat", type = "header", label = "Colors" },
-  { s = "threat", type = "colors", label = "Threat colors", colors = { { "hold", "Holding" }, { "slip", "Slipping" }, { "lost", "Lost" }, { "other", "Other tank" } }, keys = "color colour" },
 
   -- Crowd control
+  { s = "cc", type = "header", label = "Colors" },
+  { s = "cc", type = "colors", label = "CC colors", colors = { { "cc", "CC'd" }, { "broken", "Broken" } }, keys = "cc color colour" },
   { s = "cc", type = "header", label = "Crowd control" },
   { s = "cc", type = "toggle", label = "Watch crowd control", desc = "Sheep, sap, shackle, trap, hibernate...", path = { "cc", "enabled" }, keys = "cc polymorph sap" },
   { s = "cc", type = "toggle", label = "Alert even when unsure", desc = "In dungeons we can't tell 'broke' from 'ran out'", path = { "cc", "alertWhenUnknown" }, keys = "cc ended expired" },
   { s = "cc", type = "toggle", label = "Show CC banner", desc = "Center-screen 'CC BROKEN' message", path = { "cc", "showBanner" }, keys = "cc text" },
   -- (this "sound" row is the dropdown that picks ns.db.cc.breakSound; its list comes from ns.Sounds in Alerts.lua)
-  { s = "cc", type = "sound",  label = "CC-broken ping sound", desc = "Played when CC ends early", path = { "cc", "breakSound" }, keys = "cc audio ping" },
+  { s = "cc", type = "sound",  label = "CC-broken ping sound", desc = "Played when CC ends or is broken", path = { "cc", "breakSound" }, keys = "cc audio ping" },
   { s = "cc", type = "slider", label = "Number of pings", desc = "How many times the ping plays", path = { "cc", "pingCount" }, min = 1, max = 3, step = 1, fmt = "%d", keys = "cc repeat" },
   { s = "cc", type = "slider", label = "Highlight time", desc = "Seconds the plate stays orange", path = { "cc", "flashSeconds" }, min = 1, max = 10, step = 1, fmt = "%d s", keys = "cc flash duration" },
-  { s = "cc", type = "colors", label = "CC colors", colors = { { "cc", "CC'd" }, { "broken", "Broken" } }, keys = "cc color colour" },
+
+  -- Alert banners (the THREAT LOST / CC BROKEN boxes). Turning them on/off
+  -- lives on the Threat and Crowd Control pages ("Show ... banner").
+  -- "Reset section" on this page puts both banners back to their default spot and size.
+  { s = "banners", type = "header", label = "Position" },
+  { s = "banners", type = "button", label = "Move alert banners", desc = "Unlock, drag them (mouse wheel resizes), then lock", button = function() return ns.BannersLocked() and "Unlock" or "Lock" end, run = function() ns:Fire("TOGGLE_BANNER_LOCK") end, keys = "position move drag unlock lock dialog box" },
+  { s = "banners", type = "button", label = "Reset positions", desc = "Put both banners back in their default spot", button = "Reset", run = function() ns.ResetBannerPositions() end, keys = "position move default dialog box" },
+  { s = "banners", type = "header", label = "Size" },
+  { s = "banners", type = "slider", label = "Threat banner size", desc = "Scale of the THREAT LOST banner", path = { "banners", "threatScale" }, min = 0.5, max = 2, step = 0.1, fmt = "%.1fx", keys = "scale size resize big small dialog box" },
+  { s = "banners", type = "slider", label = "CC banner size", desc = "Scale of the CC BROKEN banner", path = { "banners", "ccScale" }, min = 0.5, max = 2, step = 0.1, fmt = "%.1fx", keys = "cc scale size resize big small dialog box" },
 
   -- Nameplates
   { s = "plates", type = "header", label = "Nameplate look" },
@@ -156,7 +169,6 @@ local OPTIONS = {
 
   -- Profiles
   { s = "profiles", type = "header", label = "Profiles" },
-  { s = "profiles", type = "button", label = "Move alert banners", desc = "Unlock / lock the banners so you can drag them", button = "Unlock", run = function() ns:Fire("TOGGLE_BANNER_LOCK") end, keys = "position move drag" },
   { s = "profiles", type = "button", label = "Reset everything", desc = "Put every setting back to default", button = "Reset", run = function() SlashCmdList.METROTANK("reset") end, keys = "default" },
 }
 
@@ -391,8 +403,10 @@ local function CreateRow(parent, opt)
   elseif opt.type == "colors" then MakeColors(row, opt)
   elseif opt.type == "text" then MakeTextInput(row, opt)
   elseif opt.type == "button" then
-    local b = MakeButton(row, opt.button, 90, opt.run)
+    local dynamic = type(opt.button) == "function"
+    local b = MakeButton(row, dynamic and opt.button() or opt.button, 90, opt.run)
     b:SetPoint("RIGHT", -12, 0)
+    if dynamic then row.Refresh = function() b.text:SetText(opt.button()) end end
   end
   return row
 end
@@ -632,6 +646,8 @@ ns.ToggleOptions = Toggle
 -- whenever any setting changes, so the open window redraws itself.
 ns:Listen("TOGGLE_OPTIONS", Toggle)
 ns:Listen("SETTING_CHANGED", function() if win and win:IsShown() then RefreshList() end end)
+-- so the "Move alert banners" button flips between Unlock and Lock
+ns:Listen("TOGGLE_BANNER_LOCK", function() if win and win:IsShown() then RefreshList() end end)
 
 ---------------------------------------------------------------------------
 -- Small page in Esc > Options > AddOns that opens our window
