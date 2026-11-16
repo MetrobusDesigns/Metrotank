@@ -119,10 +119,10 @@ local OPTIONS = {
   { s = "threat", type = "header", label = "Colors" },
   { s = "threat", type = "colors", label = "Threat colors", colors = { { "hold", "Holding" }, { "slip", "Slipping" }, { "lost", "Lost" }, { "other", "Other tank" } }, keys = "color colour" },
   { s = "threat", type = "header", label = "Threat alerts" },
-  { s = "threat", type = "toggle", label = "Alert when I lose threat", desc = "Banner + sound when a mob targets another player", path = { "threat", "alertLost" }, keys = "aggro warning banner" },
-  { s = "threat", type = "toggle", label = "Warn when threat is slipping", desc = "Someone is close to pulling the mob off you", path = { "threat", "alertSlipping" }, keys = "aggro close" },
-  { s = "threat", type = "toggle", label = "Show threat banner", desc = "Big center-screen message", path = { "threat", "showBanner" }, keys = "text screen" },
-  { s = "threat", type = "toggle", label = "Only in a group", desc = "Stay quiet while soloing", path = { "threat", "onlyInGroup" }, keys = "solo party" },
+  { s = "threat", type = "toggle", label = "On Threat Lost", desc = "Banner + sound when a mob targets another player", path = { "threat", "alertLost" }, keys = "aggro warning banner" },
+  { s = "threat", type = "toggle", label = "Warn on Losing Threat (slipping)", desc = "Someone is close to pulling the mob off you", path = { "threat", "alertSlipping" }, keys = "aggro close" },
+  { s = "threat", type = "toggle", label = "Show threat banner", desc = "Dialogue box message", path = { "threat", "showBanner" }, keys = "text screen" },
+  { s = "threat", type = "toggle", label = "Party or Raid only", desc = "Will stay quiet while solo/questing", path = { "threat", "onlyInGroup" }, keys = "solo party" },
   { s = "threat", type = "sound",  label = "Lost-threat sound", desc = "Plays once per mob, then waits for the cooldown", path = { "threat", "lostSound" }, keys = "audio noise" },
   { s = "threat", type = "sound",  label = "Slipping sound", desc = "Optional softer warning", path = { "threat", "slipSound" }, keys = "audio noise" },
 
@@ -150,7 +150,7 @@ local OPTIONS = {
 
   -- Nameplates
   { s = "plates", type = "header", label = "Nameplate look" },
-  { s = "plates", type = "toggle", label = "Colored border", desc = "Works with Plater, Platynator and EllesmereUI", path = { "plates", "border" }, keys = "outline glow" },
+  { s = "plates", type = "toggle", label = "Colored border", desc = "Beta: Test with Plater, Platynator or EllesmereUI", path = { "plates", "border" }, keys = "outline glow" },
   { s = "plates", type = "toggle", label = "Recolor health bar", desc = "Blizzard nameplates only", path = { "plates", "recolorBar" }, keys = "color colour bar" },
   { s = "plates", type = "toggle", label = "Show state label", desc = "Small text under the plate: LOST, CC'D...", path = { "plates", "showTag" }, keys = "text tag" },
   { s = "plates", type = "toggle", label = "Show icon", desc = "Small icon beside the plate", path = { "plates", "showIcon" }, keys = "icon" },
@@ -445,7 +445,7 @@ end
 ---------------------------------------------------------------------------
 -- Main window
 ---------------------------------------------------------------------------
--- Window state shared by the functions below:
+-- The Window state is shared by the functions below:
 --   win         the main window (nil until first opened)
 --   rows        every row built from OPTIONS
 --   navButtons  the left-menu buttons, keyed by section key

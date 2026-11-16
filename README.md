@@ -13,11 +13,11 @@ This addon currently is NOT supported on Curseforge, Wago, WoWup etc. Updates to
 
 # Metrotank — Tank Alerts for WoW Forever
 
-Metrotank is a tank add-on for **World of Warcraft: Forever** designed to give an audio cue when threat is lost on an enemy mob. In addition to this, Metrotank also contains three additional features:
+Metrotank is a tank add-on for **World of Warcraft: Forever** designed to give an audio cue and dialogue box when threat is lost on an enemy mob. In addition to this, Metrotank also contains three additional features:
 
 1. **Threat lost:** By default, a sound and a banner is used when a mob that originally targets the tank targets another player. 
 2. **CC broken:** A pinging sound and an orange plate is when crowd control(CC) (Sheep, Sap, Shackle, Trap…) ends early or is broken.
-3. **Nameplate colors (Beta):** There is a basic function for slightly modified Blizzard nameplates in the "Nameplates" tab. Green is for (targeting the tank), yellow (threat is slipping), red (threat is lost), purple (other or off-tank), violet (CC'd), orange (CC broken).
+3. **Nameplate colors (Beta):** There is a basic function for slightly modified Blizzard nameplates in the "Nameplates" tab. Green is for (targeting the tank), yellow (threat may be lost soon), red with a yellow indicator arrow on top of the frame (threat is lost), purple (other or off-tank), violet (CC'd), orange (CC broken).
 
 ![Options window](docs/metrotank-mockup-1.png)
 ![Search](docs/metrotank-mockup-2.png)
@@ -25,9 +25,10 @@ Metrotank is a tank add-on for **World of Warcraft: Forever** designed to give a
 
 > The images are preliminary designs and the options are subject to change. 
 
----
+## Why Use This Addon Versus Others
 
- 
+This addon is designed to be out-of-the-box ready so anyone tanking understands what has threat (aggro) on their character. Metrotank is made for tanks, and tested by tanks. It has your best interest in mind if you're learning to tank or an experienced player.
+---
 
 ### If the addon shows as "Out of date"
 - Re-download the addon from this Github repository (https://github.com/MetrobusDesigns/Metrotank)
@@ -38,8 +39,10 @@ OR
 
 ---
 ## Options Window
-
--- There are over 100+ sounds to choose from. Many of the buttons are self-explanatory and can be toggled on and off. 
+-- All setting changes are saved automatically. 
+-- Settings can be reset by tab using the "reset tab" button or totally reset by typing '/metrotank reset' in the in-game chat box. 
+-- There are over 100+ sounds to choose from which can alert a tank. Choose one that is helpful and not distracting. Many of the button options are self-explanatory and can be toggled on and off. 
+-- There is a built in-search box to help find a particular option. 
 -- The tank dialogue box warnings can be moved and resized in the "Alert Banners" tab. 
 ---
 ## Commands
@@ -73,6 +76,8 @@ some combat values are **"secret"**: an addon can *show* them but can't *read* o
 The old combat log event (`COMBAT_LOG_EVENT_UNFILTERED`) is no longer available to addons, so CC
 tracking uses the new `HARMFUL|CROWD_CONTROL` aura filter instead.
 
+---
+ 
 ---
 
 ## Testing checklist for beta testers
