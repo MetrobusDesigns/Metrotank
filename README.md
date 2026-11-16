@@ -1,3 +1,16 @@
+## Installation Instructions 
+
+
+1. Download the repo (blue **Code** button → **Download ZIP**) and unzip it.
+2. Rename the folder to exactly **`Metrotank`** (GitHub adds `-main` to the end and must be deleted).
+3. Move the `Metrotank` folder to:
+   Windows: `World of Warcraft\_forever_\Interface\AddOns\`
+   Linux users using Proton (Steam): `.steam/steam/compatdata/(number associated with World of Warcraft)/pfx/drive_c/Program_Files(x86)/World_of_Warcraft/_forever/Interface/AddOns/Metrotank
+4. Start the game. On the character screen, open **AddOns** and make sure Metrotank is checked.
+**Note: If these instructions do not work, please provide feedback. 
+
+This addon currently is NOT supported on Curseforge, Wago, WoWup etc. Updates to the addon will appear in this Github repository (https://github.com/MetrobusDesigns/Metrotank).
+
 # Metrotank — Tank Alerts for WoW Forever
 
 Metrotank is a tank add-on for **World of Warcraft: Forever** designed to give an audio cue when threat is lost on an enemy mob. In addition to this, Metrotank also contains three additional features:
@@ -14,18 +27,7 @@ Metrotank is a tank add-on for **World of Warcraft: Forever** designed to give a
 
 ---
 
-## Installation Instructions 
-
-
-1. Download the repo (green **Code** button → **Download ZIP**) and unzip it.
-2. Rename the folder to exactly **`Metrotank`** (GitHub adds `-main` to the end and must be deleted).
-3. Move the `Metrotank` folder to:
-   Windows: `World of Warcraft\_forever_\Interface\AddOns\`
-   Linux users using Proton (Steam): `.steam/steam/compatdata/(number associated with World of Warcraft)/pfx/drive_c/Program_Files(x86)/World_of_Warcraft/_forever/Interface/AddOns/Metrotank
-4. Start the game. On the character screen, open **AddOns** and make sure Metrotank is checked.
-**Note: If these instructions do not work, please provide feedback. 
-
-This addon currently is NOT supported on Curseforge, Wago, WoWup etc. Updates to the addon will appear in this Github repository (https://github.com/MetrobusDesigns/Metrotank). 
+ 
 
 ### If the addon shows as "Out of date"
 - Re-download the addon from this Github repository (https://github.com/MetrobusDesigns/Metrotank)
