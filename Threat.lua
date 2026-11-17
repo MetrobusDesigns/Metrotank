@@ -107,6 +107,11 @@ local function UpdateUnit(unit, o)
   local state = Classify(status, token)
   local before = o.lastThreat
 
+  -- (debug only) record every change of threat state on this plate
+  if state ~= before then
+    ns.Debug("threat on", unit, ":", before, "->", state, "| status:", status, "| cc:", o.ccActive)
+  end
+
   if state == "lost" and (before == "hold" or before == "slip") then
     if ns.db.threat.alertLost then
       ns.PlayAlertSound(ns.db.threat.lostSound)

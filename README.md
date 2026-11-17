@@ -53,7 +53,8 @@ OR
 | `/metrotank test` | Preview the threat-lost banner and sound |
 | `/metrotank test cc` | Preview the CC-broken banner and ping |
 | `/metrotank unlock` | Drag the banners somewhere else. Type it again to lock them. |
-| `/metrotank debug` | Print what the addon sees to chat (useful when testing) |
+| `/metrotank debug` | Print what the addon sees to chat (useful when testing). Lines are also saved to `MetrotankDB.log` |
+| `/metrotank diag` | Report what the game client lets the addon read (target an enemy first). Saved to `MetrotankDB.diag` after `/reload` |
 | `/metrotank reset` | Put every setting back to default |
 
 Tip: target an enemy before `/metrotank test` to preview the colors on its nameplate.

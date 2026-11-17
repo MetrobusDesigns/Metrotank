@@ -59,6 +59,10 @@ local function CheckUnit(unit)
       local dead = UnitIsDead(unit)
       if ns.IsSecret(dead) then dead = false end
 
+      -- (debug only) record every CC that ends, including ones that don't alert
+      ns.Debug("CC gone on", unit, "| end time known:", exp ~= false,
+        "| seconds left:", exp and string.format("%.1f", exp - now) or "?", "| dead:", dead)
+
       if not dead then
         local certain = (exp ~= false)            -- we know when it should have ended
         local brokeEarly = certain and now < (exp - EARLY_MARGIN)
@@ -71,6 +75,13 @@ local function CheckUnit(unit)
           C_Timer.After(ns.db.cc.flashSeconds + 0.05, function() ns.RenderOverlay(o) end)
         end
       end
+    end
+  end
+
+  -- (debug only) record every new CC we notice
+  for id, exp in pairs(current) do
+    if previous[id] == nil then
+      ns.Debug("CC applied on", unit, "| end time known:", exp ~= false)
     end
   end
 

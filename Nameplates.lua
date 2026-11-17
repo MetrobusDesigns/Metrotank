@@ -7,22 +7,22 @@
   A mob you LOST threat on also gets a fast-pulsing yellow arrow above it.
 
   Each nameplate gets one "overlay" table that remembers:
-    overlay.threat      -> "hold", "slip", "lost", "other" or nil
-    overlay.ccActive    -> true while the mob is crowd-controlled
+    overlay.threat -> "hold", "slip", "lost", "other" or nil
+    overlay.ccActive    -> true while the mob is crowd-controlled (CC)
     overlay.brokenUntil -> GetTime() value; show "CC BROKEN" until then
     overlay.secretColor -> a color we can show but not read (dungeons)
-]]
+]]------
 
 local _, ns = ...
 
 ns.overlays = {}      -- unit token ("nameplate3") -> overlay
 
 local LABELS = {
-  hold   = "ON YOU",
-  slip   = "SLIPPING",
-  lost   = "LOST",
+  hold   = "",
+  slip   = "LOSING THREAT",
+  lost   = "LOST THREAT",
   other  = "OFF-TANK",
-  cc     = "CC'D",
+  cc     = "CC",
   broken = "CC BROKEN",
 }
 
@@ -36,13 +36,13 @@ local ICONS = {
 -- Change these numbers to tweak how it looks.
 local ARROW_COLOR = { 1.00, 1.00, 0.00 } -- solid yellow (red, green, blue)
 local ARROW_ROWS  = 8    -- the triangle is 8 stacked bars...
-local ARROW_ROW_H = 2    -- ...each 2 px tall, so 16 px tall and 16 px wide
+local ARROW_ROW_H = 2    -- ...each is 2 px tall, so 16 px tall and 16 px wide
 local ARROW_GAP   = 16   -- px above the health bar (leaves room for the mob's name)
 local ARROW_PULSE = 0.15 -- seconds per blink; smaller = faster
 
----------------------------------------------------------------------------
--- Find the health bar of whatever nameplate addon is in use
----------------------------------------------------------------------------
+---------------------------------------------------------------
+--[[ Find the health bar of whatever nameplate addon is in use (currently testing to use in Plater / Playnator and MF Plater)
+]]--
 local function FindHealthBar(plate)
   -- Plater keeps its frame in plate.unitFrame (lower-case u)
   if plate.unitFrame and plate.unitFrame.healthBar then
@@ -60,14 +60,13 @@ local function FindHealthBar(plate)
   return plate, "unknown"
 end
 
----------------------------------------------------------------------------
--- Build the overlay frame for one plate
----------------------------------------------------------------------------
+--[[ This section builds the overlay frame for one plate
+---------------------------------------------------------------------------]]
 local function CreateOverlay(plate)
   local o = CreateFrame("Frame", nil, plate)
   o:SetFrameLevel(plate:GetFrameLevel() + 20)
 
-  -- 4 thin textures make a border (textures can safely show secret colors)
+  -- 4 thin textures make a border (textures should be able to  safely show secret colors)
   o.edges = {}
   local size = 2
   for i = 1, 4 do
@@ -96,7 +95,7 @@ local function CreateOverlay(plate)
   local a = o.pulse:CreateAnimation("Alpha")
   a:SetFromAlpha(1); a:SetToAlpha(0.35); a:SetDuration(0.35)
 
-  -- Lost-threat arrow. It gets its own small frame so it can pulse by itself,
+  -- Lost-threat arrow. Separate small frame so it can pulse by itself,
   -- faster than the border. The triangle is drawn as stacked bars that get
   -- narrower toward the bottom: 16 px wide at the top, 2 px wide at the tip.
   o.arrow = CreateFrame("Frame", nil, o)
