@@ -13,21 +13,27 @@ This addon currently is NOT supported on Curseforge, Wago, WoWup etc. Updates to
 
 # Metrotank — Tank Alerts for WoW Forever
 
-Metrotank is a tank add-on for **World of Warcraft: Forever** designed to give an audio cue and dialogue box when threat is lost on an enemy mob. In addition to this, Metrotank also contains three additional features:
+Metrotank is a **World of Warcraft: Forever** addon that is designed for a player to quickly react when they do not have aggro (threat) on a target. It has the following features:
 
-1. **Threat lost:** By default, a sound and a banner is used when a mob that originally targets the tank targets another player. 
-2. **CC broken:** A pinging sound and an orange plate is when crowd control(CC) (Sheep, Sap, Shackle, Trap…) ends early or is broken.
-3. **Nameplate colors (Beta):** There is a basic function for slightly modified Blizzard nameplates in the "Nameplates" tab. Green is for (targeting the tank), yellow (threat may be lost soon), red with a yellow indicator arrow on top of the frame (threat is lost), purple (other or off-tank), violet (CC'd), orange (CC broken).
+1. **Threat lost:** A pinging sound and a banner is displayed when a mob that originally targets the tank targets another player. 
+2. **CC broken:** A pinging sound and a banner is displayed when crowd control(CC) (Sheep, Sap, Shackle, Trap…) ends early or is broken.
+3. **Nameplate colors (Beta):** Nameplates are color-coded based on what the enemy mob is attacking. 
+   -- Green: Targeting the tank 
+   -- Yellow: Threat may be lost soon 
+   -- Red: Threat is lost 
+   -- Purple: Off-tank has aggro 
+   -- Violet: Crowd control (CC) 
+   -- Orange: CC broken and targeting a non-tank player
 
 ![Options window](docs/metrotank-mockup-1.png)
 ![Search](docs/metrotank-mockup-2.png)
 ![In-game alerts](docs/metrotank-mockup-3.png)
 
-> The images are preliminary designs and the options are subject to change. 
+> Images are preliminary designs and subject to change. 
 
-## Why Use This Addon Versus Others
+## Why Use Metrotank
 
-This addon is designed to be out-of-the-box ready so anyone tanking understands what has threat (aggro) on their character. Metrotank is made for tanks, and tested by tanks. It has your best interest in mind if you're learning to tank or an experienced player.
+ Other addons are typically designed to warn a player if they pull aggro. Metrotank is designed to do the opposite.  
 ---
 
 ### If the addon shows as "Out of date"
